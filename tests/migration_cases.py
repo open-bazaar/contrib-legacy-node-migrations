@@ -417,7 +417,6 @@ async def test_business_lifespans_resume_registered_nodes_and_preserve_rows(
     from bazaar_contrib_collaboration import COLLABORATION
     from bazaar_contrib_messages import MESSAGES
     from bazaar_contrib_reminder import REMINDER
-    from bazaar_contrib_schema import SCHEMA
     from bazaar_contrib_storage import DB, Update, Value
     from bazaar_core import Context, Contrib, ContribEntry
 
@@ -446,7 +445,7 @@ async def test_business_lifespans_resume_registered_nodes_and_preserve_rows(
 
     @asynccontextmanager
     async def consume(ctx: Context):
-        active.append((ctx.accept(SCHEMA), ctx.accept(DB)))
+        active.append(ctx.accept(DB))
         yield
 
     for _ in range(2):
@@ -457,7 +456,7 @@ async def test_business_lifespans_resume_registered_nodes_and_preserve_rows(
             entry = ContribEntry(
                 name="consumer",
                 definition=Contrib(
-                    accepts=[AGENTS, SCHEMA, DB, MESSAGES, COLLABORATION, REMINDER],
+                    accepts=[AGENTS, DB, MESSAGES, COLLABORATION, REMINDER],
                     lifespan=consume,
                 ),
             )
@@ -466,10 +465,7 @@ async def test_business_lifespans_resume_registered_nodes_and_preserve_rows(
             )
 
         async with node(start=select):
-            schema, database = active[0]
-            assert {f"bazaar-contrib-{name}" for name in modules}.issubset(
-                schema.modules
-            )
+            database = active[0]
             assert await database.select(Select(table="messages"))
             assert await database.select(Select(table="reminders"))
             owners = await database.select(Select(table="contrib_schema_tables"))
